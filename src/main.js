@@ -1,68 +1,98 @@
-const products = [
-    {
-      name: "Giant BBQ",
-      image: "https://i.imgur.com/yPreV19.png",
-      description: `Grilled chicken, beef, fish, sausages, bacon, 
-        vegetables served with chips.`,
-      location: "Kimironko Market",
-      owner: "0x32Be343B94f860124dC4fEe278FDCBD38C102D88",
-      price: 3,
-      sold: 27,
-      index: 0,
-    },
-    {
-      name: "BBQ Chicken",
-      image: "https://i.imgur.com/NMEzoYb.png",
-      description: `French fries and grilled chicken served with gacumbari 
-        and avocados with cheese.`,
-      location: "Afrika Fresh KG 541 St",
-      owner: "0x3275B7F400cCdeBeDaf0D8A9a7C8C1aBE2d747Ea",
-      price: 4,
-      sold: 12,
-      index: 1,
-    },
-    {
-      name: "Beef burrito",
-      image: "https://i.imgur.com/RNlv3S6.png",
-      description: `Homemade tortilla with your choice of filling, cheese, 
-        guacamole salsa with Mexican refried beans and rice.`,
-      location: "Asili - KN 4 St",
-      owner: "0x2EF48F32eB0AEB90778A2170a0558A941b72BFFb",
-      price: 2,
-      sold: 35,
-      index: 2,
-    },
-    {
-      name: "Barbecue Pizza",
-      image: "https://i.imgur.com/fpiDeFd.png",
-      description: `Barbecue Chicken Pizza: Chicken, gouda, pineapple, onions 
-        and house-made BBQ sauce.`,
-      location: "Kigali Hut KG 7 Ave",
-      owner: "0x2EF48F32eB0AEB90778A2170a0558A941b72BFFb",
-      price: 1,
-      sold: 2,
-      index: 3,
-    }
-]
+import Web3 from "web3";
+import { newKitFromWeb3 } from "@celo/contractkit";
+import BigNumber from "bignumber.js";
 
-const getBalance = function () {
-    document.querySelector("#balance").textContent = 21;
+const ERC20_DECIMALS = 18;
+
+let kit;
+
+const connectCeloWallet = async () => {
+    if (window.celo) {
+        notification("⚠️ Please approve this Dapp to use it");
+        try {
+            await window.celo.enable();
+            notificationOff();
+            // getting the celo kit from web3 and storing it in the global kit variable
+            const web3 = new Web3(window.celo);
+            kit = newKitFromWeb3(web3);
+
+            const accounts = await kit.web3.eth.getAccounts();
+            kit.defaultAccount = accounts[0];
+        } catch (error) {
+            notification(`⚠️ ${error}.`);
+        }
+    } else {
+        notification("⚠️ Please install the CeloExtensionWallet");
+    }
+}
+
+// const products = [
+//     {
+//         name: "Giant BBQ",
+//         image: "https://i.imgur.com/yPreV19.png",
+//         description: `Grilled chicken, beef, fish, sausages, bacon, 
+//         vegetables served with chips.`,
+//         location: "Kimironko Market",
+//         owner: "0x32Be343B94f860124dC4fEe278FDCBD38C102D88",
+//         price: 3,
+//         sold: 27,
+//         index: 0,
+//     },
+//     {
+//         name: "BBQ Chicken",
+//         image: "https://i.imgur.com/NMEzoYb.png",
+//         description: `French fries and grilled chicken served with gacumbari 
+//         and avocados with cheese.`,
+//         location: "Afrika Fresh KG 541 St",
+//         owner: "0x3275B7F400cCdeBeDaf0D8A9a7C8C1aBE2d747Ea",
+//         price: 4,
+//         sold: 12,
+//         index: 1,
+//     },
+//     {
+//         name: "Beef burrito",
+//         image: "https://i.imgur.com/RNlv3S6.png",
+//         description: `Homemade tortilla with your choice of filling, cheese, 
+//         guacamole salsa with Mexican refried beans and rice.`,
+//         location: "Asili - KN 4 St",
+//         owner: "0x2EF48F32eB0AEB90778A2170a0558A941b72BFFb",
+//         price: 2,
+//         sold: 35,
+//         index: 2,
+//     },
+//     {
+//         name: "Barbecue Pizza",
+//         image: "https://i.imgur.com/fpiDeFd.png",
+//         description: `Barbecue Chicken Pizza: Chicken, gouda, pineapple, onions 
+//         and house-made BBQ sauce.`,
+//         location: "Kigali Hut KG 7 Ave",
+//         owner: "0x2EF48F32eB0AEB90778A2170a0558A941b72BFFb",
+//         price: 1,
+//         sold: 2,
+//         index: 3,
+//     }
+// ]
+
+const getBalance = async () => {
+    const totalBalance = await kit.getTotalBalance(kit.defaultAccount);
+    const cUSDBalance = totalBalance.cUSD.shiftedBy(-ERC20_DECIMALS).toFixed(2);
+    document.querySelector("#balance").textContent = cUSDBalance;
 };
 
 function renderProducts() {
     document.getElementById("marketplace").innerHTML = "";
     products.forEach((_product) => {
-        const newDiv = document.createElement('div');
-        newDiv.className = 'col-md-4';
+        const newDiv = document.createElement("div");
+        newDiv.className = "col-md-4";
         newDiv.innerHTML = productTemplate(_product);
-        document.getElementById("markeplace").appendChild(newDiv);
+        document.getElementById("marketplace").appendChild(newDiv);
     })
 }
 
 function productTemplate(_product) {
     return `
     <div class= "card mb-4">
-        <img class= "card-img-top" src= "${_product.image}" alt="..."/>
+        <img class= "card-img-top" src= "${_product.image}" alt="...">
         <div class="position-absolute top-0 end-0 bg-warning mt-4 px-2 py-1 rounded-start">
             ${_product.sold} Sold
         </div>
@@ -111,10 +141,11 @@ function notificationOff() {
     document.querySelector(".alert").style.display = "none";
 }
 
-window.addEventListener("load", () => {
+window.addEventListener("load", async () => {
     notification("⏳ Loading...");
-    getBalance();
-    renderProducts();
+    await connectCeloWallet();
+    await getBalance();
+    //renderProducts();
     notificationOff();
 })
 
@@ -127,7 +158,7 @@ document.querySelector("#newProductBtn").addEventListener("click", () => {
         location: document.getElementById("newLocation").value,
         price: document.getElementById("newPrice").value,
         sold: 0,
-        index: products.length,
+        index: products.length
     }
     products.push(_product)
     notification(`🎉 You successfully added "${_product.name}".`)
@@ -135,7 +166,7 @@ document.querySelector("#newProductBtn").addEventListener("click", () => {
 })
 
 document.querySelector("#marketplace").addEventListener("click", (e) => {
-    if(e.target.className.includes("buyBtn")) {
+    if (e.target.className.includes("buyBtn")) {
         const index = e.target.id;
         products[index].sold++;
         notification(`🎉 You successfully bought "${products[index].name}".`);
