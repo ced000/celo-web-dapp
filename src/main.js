@@ -74,7 +74,7 @@ const approve = async (_price) => {
 //         owner: "0x2EF48F32eB0AEB90778A2170a0558A941b72BFFb",
 //         price: 2,
 //         sold: 35,
-//         index: 2,
+//         index: 22,
 //     },
 //     {
 //         name: "Barbecue Pizza",
